@@ -1,6 +1,6 @@
 FROM node:latest
 
-mkdir noflo-ui
-cd noflo-ui
+RUN mkdir noflo-ui
+RUN cd noflo-ui
 
 
