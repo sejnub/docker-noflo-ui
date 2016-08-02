@@ -1,0 +1,164 @@
+<link rel="import" href="../bower_components/the-graph/the-graph-nav/the-graph-nav.html">
+
+<polymer-element name="noflo-journal" attributes="graph editor panel">
+  <template>
+    <style>
+      #controls {
+        display: block;
+        position: fixed;
+        right: 36px;
+        bottom: 0;
+        width: 288px;
+        height: 180px;
+        color: hsl(189, 50%, 80%);
+        box-sizing: border-box;
+        background-color: hsla(0, 0%, 0%, 0.98) !important;
+        background-image: radial-gradient(1px at 0px 0px, hsl(210, 50%, 60%) 0.5px, hsla(0, 0%, 0%, 0) 1px);
+        background-size: calc(100% - 1px);
+        background-position: 0px -1px;
+        border-top: 1px solid hsla(190, 90%, 80%, 0.3);
+      }
+
+      #controls button {
+        line-height: 36px;
+        border: none;
+        background-color: transparent;
+        font-size: 14px;
+        width: 72px;
+        color: hsl(189, 50%, 80%);
+      }
+      #controls button.undo {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+      }
+      #controls button.redo {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+      }
+      #controls button.disabled {
+        color: rgba(179, 222, 230, 0.2);
+      }
+      #controls button.autolayout {
+        position: absolute;
+        left: calc(50% - 18px);
+        bottom: 0;
+      }
+
+      #nav {
+        position: absolute;
+        left: 0;
+        top: 0;
+      }
+    </style>
+    <div id="controls">
+      <template if="{{ graph }}">
+        <the-graph-nav id="nav" width="288" height="144" editor="{{ editor }}" hide="{{ hidenav }}"></the-graph-nav>
+
+        <button title="Undo" class="undo {{ { disabled: !canUndo } | tokenList }}" on-click="{{ undo }}"><i class="fa fa-undo"></i></button>
+        <template if="{{ klay }}">
+          <button title="Autolayout" class="autolayout" on-click="{{ autolayout }}"><i class="fa fa-magic"></i></button>
+        </template>
+        <button title="Redo" class="redo {{ { disabled: !canRedo } | tokenList }}" on-click="{{ redo }}"><i class="fa fa-repeat"></i></button>
+      </template>
+    </div>
+  </template>
+  <script>
+    Polymer('noflo-journal', {
+      db: null,
+      graph: null,
+      editor: null,
+      returnTo: null,
+      klay: false,
+      hidenav: false,
+      canUndo: false,
+      canRedo: false,
+      attached: function () {
+        this.klay = true;
+      },
+      graphChanged: function () {
+        this.checkState();
+        if (!this.graph || !this.graph.on) {
+          return;
+        }
+
+        var positionedNodes = this.graph.nodes.filter(function (node) {
+          if (!node.metadata) {
+            return false;
+          }
+          if (!node.metadata.x || !node.metadata.y) {
+            return false;
+          }
+          return true;
+        });
+        if (this.graph.nodes.length && !positionedNodes.length) {
+          setTimeout(function () {
+            this.autolayout();
+          }.bind(this), 10);
+        }
+
+        if (!this.graph.properties.project || this.graph.journal || !this.db) {
+          return;
+        }
+
+        // Initialize persistent journal whenever needed
+        var noflo = require('noflo');
+        var IDBJournalStore = require('noflo-ui/src/JournalStore').IDBJournalStore;
+        var store = new IDBJournalStore(this.graph, this.db);
+        store.init(function () {
+          this.graph.journal = new noflo.Journal(this.graph, undefined, store);
+          this.checkState();
+          this.graph.journal.store.on('transaction', function () {
+            this.checkState();
+          }.bind(this));
+        }.bind(this));
+      },
+      checkState: function () {
+        if (!this.graph || !this.graph.journal) {
+          this.canUndo = false;
+          this.canRedo = false;
+          return;
+        }
+        this.canUndo = this.graph.journal.canUndo();
+        this.canRedo = this.graph.journal.canRedo();
+      },
+      undo: function (event, data, sender) {
+        if (event) {
+          event.preventDefault();
+        }
+        if (!this.graph || !this.graph.journal) {
+          return;
+        }
+        this.graph.journal.undo();
+        this.checkState();
+      },
+      redo: function (event, data, sender) {
+        if (event) {
+          event.preventDefault();
+        }
+        if (!this.graph || !this.graph.journal) {
+          return;
+        }
+        this.graph.journal.redo();
+        this.checkState();
+      },
+      autolayout: function (event, data, sender) {
+        if (event) {
+          event.preventDefault();
+        }
+        if (!this.graph || !this.klay) {
+          return;
+        }
+        this.editor.triggerAutolayout();
+      },
+      hidenavChanged: function () {
+        if (this.hidenav) {
+          this.$.controls.style.height = "36px";
+        } else {
+          this.$.controls.style.height = "180px";
+        }
+      }
+    });
+  </script>
+</polymer-element>

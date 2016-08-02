@@ -1,0 +1,72 @@
+<polymer-element name="noflo-exported-inspector" attributes="graph publicport privateport direction" class="modal-content" on-click="{{ close }}">
+  <template>
+    <div class="modal-container" on-click="{{ bgClick }}">
+      <h1>Published {{ direction }} port {{ publicport }}</h1>
+      <form>
+        <label>
+          Port name
+          <input type="text" value="{{ name }}" required>
+        </label>
+        <div class="toolbar">
+          <button on-click="{{ send }}" class="{{ { disabled: !canSend } | tokenList }}">Rename</button>
+          <a on-click="{{ close }}">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </template>
+  <script>
+    Polymer('noflo-exported-inspector', {
+      name: '',
+      direction: 'input',
+      publicport: '',
+      privateport: null,
+      graph: null,
+      attached: function () {
+        document.getElementById('container').classList.add('blur');
+        this.name =  this.publicport;
+      },
+      detached: function () {
+        document.getElementById('container').classList.remove('blur');
+      },
+      nameChanged: function () {
+        if (!this.name) {
+          this.canSend = false;
+          return;
+        }
+        if (this.direction === 'input' && (this.name === 'start' || this.name === 'graph')) {
+          // Reserved port names
+          this.canSend = false;
+          return;
+        }
+        this.canSend = true;
+      },
+      send: function (event) {
+        if (event) {
+          event.preventDefault();
+        }
+        if (!this.name) {
+          return;
+        }
+        if (this.direction === 'input') {
+          if (this.name === 'start' || this.name === 'graph') {
+            return;
+          }
+          this.graph.renameInport(this.publicport, this.name);
+        } else {
+          this.graph.renameOutport(this.publicport, this.name);
+        }
+        this.close();
+      },
+      bgClick: function (event) {
+        // Don't close if clicking within container
+        event.stopPropagation();
+      },
+      close: function () {
+        if (!this.parentNode) {
+          return;
+        }
+        this.parentNode.removeChild(this);
+      }
+    });
+  </script>
+</polymer-element>

@@ -1,0 +1,437 @@
+<link rel="import" href="noflo-main.html">
+<link rel="import" href="../bower_components/the-graph/the-graph-editor/the-graph-editor.html">
+<link rel="import" href="noflo-library.html">
+<link rel="import" href="noflo-context.html">
+<link rel="import" href="noflo-runtime.html">
+<link rel="import" href="noflo-journal.html">
+<link rel="import" href="noflo-component-editor.html">
+<link rel="import" href="noflo-search.html">
+<link rel="import" href="noflo-project.html">
+<link rel="import" href="noflo-packets.html">
+<link rel="import" href="noflo-alert.html">
+<polymer-element name="noflo-ui" attributes="width height">
+  <template>
+    <style>
+      #grapheditor {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+      }
+      #componenteditor {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 36px;
+        right: 0;
+        z-index: 0;
+      }
+      #alert {
+        box-sizing: border-box;
+        position: fixed;
+        top: -144px;
+        left: 0;
+        right: 0;
+        z-index: 10;
+        max-height: 144px;
+        overflow: hidden;
+        transition: top 0.3s ease-in-out;
+      }
+      #alert.show {
+        top: 0;
+      }
+    </style>
+    <noflo-main id="main"></noflo-main>
+    <the-graph-editor id="grapheditor" width="{{ width }}" height="{{ height }}"></the-graph-editor>
+    <noflo-library id="library"></noflo-library>
+    <noflo-context id="context"></noflo-context>
+    <noflo-runtime id="runtime"></noflo-runtime>
+    <noflo-journal id="journal"></noflo-journal>
+    <noflo-component-editor id="componenteditor" width="{{ width }}" height="{{ height }}"></noflo-component-editor>
+    <noflo-search id="search"></noflo-search>
+    <noflo-project id="project"></noflo-project>
+    <noflo-packets id="packets"></noflo-packets>
+    <noflo-alert id="alert" on-click="{{ hideAlert }}"></noflo-alert>
+  </template>
+  <script>
+    Polymer('noflo-ui', {
+      width: window.innerWidth,
+      height: window.innerHeight,
+      ctx: {},
+      dontAutoHideAlert: false,
+      ready: function () {
+        this.$.main.addEventListener('logout', function (event) {
+          this.fire('user:logout', true);
+        }.bind(this));
+        this.$.main.addEventListener('login', function (event) {
+          this.fire('user:loginFree', true);
+        }.bind(this));
+        this.$.main.addEventListener('login', function (event) {
+          this.fire('user:loginFree', true);
+        }.bind(this));
+        this.$.main.addEventListener('relogin', function (event) {
+          if (event.detail !== 'free') {
+            this.fire('user:loginPro', true);
+            return;
+          }
+          this.fire('user:loginFree', true);
+        }.bind(this));
+        this.$.main.addEventListener('fetchRemote', function (event) {
+          this.fire('github:fetch', event.detail);
+        }.bind(this));
+        this.$.main.addEventListener('downloadProject', function (event) {
+          this.fire('project:save:project', event.detail.project);
+          setTimeout(function () {
+            this.fire('github:sync:pull', {
+              repo: event.detail.project.repo,
+              project: event.detail.project
+            });
+            this.$.main.projects.push(event.detail.project);
+            this.$.main.checkProject(event.detail.project);
+            this.ctx.projects.push(event.detail.project);
+          }.bind(this), 2);
+        }.bind(this));
+        this.$.main.addEventListener('newgraph', function (event) {
+          this.fire('project:save:graph', event.detail);
+        }.bind(this));
+        this.$.main.addEventListener('runtime', function (event) {
+          this.fire('project:save:runtime', event.detail);
+        }.bind(this));
+        this.$.main.addEventListener('newproject', function (event) {
+          this.fire('project:save:project', event.detail);
+          this.ctx.projects.push(event.detail);
+          setTimeout(function () {
+            window.location.hash = '#project/' + encodeURIComponent(event.detail.id) + '/' + encodeURIComponent(event.detail.main);
+          }, 2);
+        }.bind(this));
+        this.$.context.addEventListener('newgraph', function (event) {
+          this.fire('project:save:graph', event.detail);
+          this.fire('runtime:sendGraph', event.detail);
+        }.bind(this));
+        this.$.runtime.addEventListener('runtime', function (event) {
+          var newCtx = {};
+          for (var key in this.ctx) {
+            newCtx[key] = this.ctx[key];
+          }
+          newCtx.runtime = event.detail;
+          this.fire('runtime:connect', newCtx);
+        }.bind(this));
+        this.$.runtime.addEventListener('changed', function (event) {
+          this.fire('project:save:runtime', event.detail);
+        }.bind(this));
+        this.$.grapheditor.addEventListener('edges', function (event) {
+          this.fire('context:edges', event.detail);
+        }.bind(this));
+        this.$.grapheditor.addEventListener('nodes', function (event) {
+          this.fire('context:nodes', event.detail);
+        }.bind(this));
+        this.$.project.addEventListener('changed', function (event) {
+          this.fire('project:save:project', event.detail);
+        }.bind(this));
+        this.$.project.addEventListener('newgraph', function (event) {
+          this.fire('project:save:graph', event.detail);
+          this.fire('runtime:sendGraph', event.detail);
+          this.triggerTests();
+        }.bind(this));
+        this.$.project.addEventListener('newcomponent', function (event) {
+          this.fire('project:save:component', event.detail);
+          this.fire('runtime:sendComponent', event.detail);
+        }.bind(this));
+        this.$.project.addEventListener('sync', function (event) {
+          this.fire('github:sync:prepare', event.detail);
+        }.bind(this));
+        this.$.project.addEventListener('syncDecision', function (event) {
+          this.fire('github:sync:synchronize', event.detail);
+        }.bind(this));
+        this.$.project.addEventListener('deleteProject', function (event) {
+          window.location.hash = '#';
+          event.detail.graphs.forEach(function (graph) {
+            this.fire('project:delete:graph', graph);
+          }.bind(this));
+          event.detail.components.forEach(function (component) {
+            this.fire('project:delete:component', component);
+          }.bind(this));
+          event.detail.specs.forEach(function (spec) {
+            this.fire('project:delete:spec', spec);
+          }.bind(this));
+          this.fire('project:delete:project', event.detail);
+          this.$.main.projects.splice(this.$.main.projects.indexOf(event.detail), 1);
+          this.$.main.localProjects.splice(this.$.main.localProjects.indexOf(event.detail), 1);
+        }.bind(this));
+        this.$.main.addEventListener('deleteProject', function (event) {
+          window.location.hash = '#';
+          event.detail.graphs.forEach(function (graph) {
+            this.fire('project:delete:graph', graph);
+          }.bind(this));
+          event.detail.components.forEach(function (component) {
+            this.fire('project:delete:component', component);
+          }.bind(this));
+          event.detail.specs.forEach(function (spec) {
+            this.fire('project:delete:spec', spec);
+          }.bind(this));
+          this.fire('project:delete:project', event.detail);
+          this.$.main.projects.splice(this.$.main.projects.indexOf(event.detail), 1);
+          this.$.main.localProjects.splice(this.$.main.localProjects.indexOf(event.detail), 1);
+        }.bind(this));
+        this.$.componenteditor.addEventListener('changed', function (event) {
+          this.fire('project:save:component', event.detail);
+          this.fire('runtime:sendComponent', event.detail);
+          this.triggerTests();
+        }.bind(this));
+        this.$.componenteditor.addEventListener('specschanged', function (event) {
+          this.fire('project:save:spec', event.detail);
+          this.triggerTests();
+        }.bind(this));
+        this.$.search.addEventListener('search:library', function (event) {
+          this.fire('context:search_library', event.detail);
+        }.bind(this));
+        this.$.search.addEventListener('search:graph', function (event) {
+          this.fire('context:search_graph', event.detail);
+        }.bind(this));
+        this.$.library.addEventListener('result', function (event) {
+          this.fire('context:search_library_result', {
+            searchLibraryResult: event.detail
+          });
+        }.bind(this));
+        this.$.search.addEventListener('deleteGraph', function (event) {
+          var project = this.ctx.project || this.$.project.project;
+          if (project && project.graphs.indexOf(event.detail) !== -1) {
+            project.graphs.splice(project.graphs.indexOf(event.detail), 1);
+          }
+          this.fire('project:delete:graph', event.detail);
+          if (!project.graphs.length && !project.components.length) {
+            // Empty project, remove
+            this.fire('project:delete:project', project);
+            this.$.main.projects.splice(this.$.main.projects.indexOf(project), 1);
+            this.$.main.localProjects.splice(this.$.main.localProjects.indexOf(project), 1);
+            // Go home
+            window.location.hash = '#';
+          } else if (project.graphs[0]) {
+            // Go to first graph
+            window.location.hash = '#project/' + encodeURIComponent(project.id) + '/' + encodeURIComponent(project.graphs[0].properties.id);
+          } else if (project.components[0]) {
+            // Go to first component
+            window.location.hash = '#project/' + encodeURIComponent(project.id) + '/component/' + encodeURIComponent(project.components[0].name);
+          }
+        }.bind(this));
+        this.$.search.addEventListener('deleteComponent', function (event) {
+          var project = this.ctx.project || this.$.project.project;
+          if (!project || !project.components) {
+            return;
+          }
+          var component = event.detail;
+          var index = project.components.indexOf(component);
+          if (index !== -1) {
+            project.components.splice(index, 1);
+          }
+          this.fire('project:delete:component', component);
+          if (!project.graphs.length && !project.components.length) {
+            // Empty project, remove
+            this.fire('project:delete:project', project);
+            this.$.main.projects.splice(this.$.main.projects.indexOf(project), 1);
+            this.$.main.localProjects.splice(this.$.main.localProjects.indexOf(project), 1);
+            // Go home
+            window.location.hash = '#';
+          } else if (project.components[0]) {
+            // Go to first component
+            window.location.hash = '#project/' + encodeURIComponent(project.id) + '/component/' + encodeURIComponent(project.components[0].name);
+          } else if (project.graphs[0]) {
+            // Go to first graph
+            window.location.hash = '#project/' + encodeURIComponent(project.id) + '/' + encodeURIComponent(project.graphs[0].properties.id);
+          }
+        }.bind(this));
+        this.$.search.addEventListener('specschanged', function (event) {
+          this.fire('project:save:spec', event.detail);
+          this.triggerTests();
+        }.bind(this));
+        this.$.library.editor = this.$.grapheditor;
+        this.$.journal.editor = this.$.grapheditor;
+        this.$.context.editor = this.$.grapheditor;
+        this.$.packets.editor = this.$.grapheditor;
+        this.$.search.editor = this.$.grapheditor;
+        this.$.runtime.panel = this.$.context.$.fixed;
+        this.$.packets.panel = this.$.context.$.context;
+        this.$.search.panel = this.$.context.$.context;
+      },
+      attached: function () {
+        // Offer HTTPS
+        if (window.location.origin === 'http://app.flowhub.io') {
+          this.showProgress({
+            offerHTTPS: true,
+            dontAutoHideAlert: true
+          });
+        }
+      },
+      context: function (context) {
+        if (context.state) {
+          switch (context.state) {
+            case 'error':
+              this.showError(context);
+              break;
+            case 'ok':
+              this.hideAlertSoon();
+              break;
+            case 'loading':
+              this.showProgress(context);
+              break;
+          }
+        }
+        for (var key in context) {
+          this.ctx[key] = context[key];
+        }
+        if (context.projects) {
+          this.$.main.projects = context.projects;
+        }
+        if (context.db) {
+          this.$.journal.db = context.db;
+        }
+        if (context.runtimes) {
+          this.$.main.runtimes = context.runtimes;
+          this.$.project.runtimes = context.runtimes;
+          this.$.search.runtimes = context.runtimes;
+        }
+        if (context.search !== undefined) {
+          this.$.library.search({
+            search: this.ctx.search
+          });
+        }
+        if (context.searchLibraryResult) {
+          this.$.search.libraryResults(this.ctx.searchLibraryResult);
+        }
+        if (context.searchGraphResult) {
+          this.$.search.graphResults(this.ctx.searchGraphResult);
+        }
+        if (this.ctx.edges !== undefined) {
+          this.$.packets.edges = this.ctx.edges;
+        }
+        if (this.ctx.error) {
+          this.$.packets.processError(this.ctx.error);
+          this.ctx.error = null;
+        }
+        if (this.ctx.packet) {
+          this.$.packets.packet(this.ctx.packet);
+          this.ctx.packet = null;
+        }
+        if (this.ctx.nodes !== undefined) {
+          this.$.context.nodes = this.ctx.nodes;
+          this.$.packets.nodes = this.ctx.nodes;
+        }
+        if (context.nodes || context.edges) {
+          return;
+        }
+        if (context.syncOperation !== undefined) {
+          this.$.project.confirm(context.syncOperation);
+          return;
+        }
+        if (context.remoteProjects !== undefined) {
+          this.$.main.githubProjects(context.remoteProjects);
+          return;
+        }
+        if (this.ctx.clearLibrary) {
+          for (var libKey in this.$.grapheditor.$.graph.library) {
+            delete this.$.grapheditor.$.graph.library[libKey];
+          }
+          delete this.ctx.clearLibrary;
+        }
+        if (this.ctx.componentDefinition !== undefined && this.ctx.componentDefinition) {
+          this.$.grapheditor.registerComponent(this.ctx.componentDefinition);
+          this.ctx.componentDefinition = null;
+        }
+        if (this.ctx.runtime !== undefined) {
+          this.$.runtime.runtime = this.ctx.runtime;
+          this.$.context.runtime = this.ctx.runtime;
+        }
+        if (this.ctx.suites) {
+          this.$.runtime.showTests(this.ctx.suites);
+        }
+        if (this.ctx.state === 'loading') {
+          return;
+        }
+        if (this.ctx.state === 'error') {
+          this.showError(this.ctx);
+          return;
+        }
+        if ((this.ctx.graphs && this.ctx.graphs.length) || this.ctx.component) {
+          this.$.main.open = false;
+        } else {
+          this.$.main.open = true;
+        }
+        if (this.ctx.graphs && this.ctx.graphs.length) {
+          var oldGraph = this.$.grapheditor.graph;
+          this.$.grapheditor.graph = this.ctx.graphs[this.ctx.graphs.length - 1];
+          this.$.project.graph = this.ctx.graphs[this.ctx.graphs.length - 1];
+          this.$.packets.currentgraph = this.ctx.graphs[this.ctx.graphs.length - 1];
+          this.$.journal.graph = this.ctx.graphs[this.ctx.graphs.length - 1];
+          this.$.runtime.graph = this.ctx.graphs[0];
+          if (oldGraph !== this.$.grapheditor.graph) {
+            setTimeout(function () {
+              this.fire('context:graph', {
+                graph: this.$.grapheditor.graph
+              });
+            }.bind(this), 1);
+          }
+        } else {
+          this.$.project.graph = null;
+          this.$.journal.graph = null;
+          this.$.runtime.graph = null;
+        }
+        if (this.ctx.graphs) {
+          this.$.context.graphs = this.ctx.graphs;
+          this.$.library.graphs = this.ctx.graphs;
+          this.$.project.graphs = this.ctx.graphs;
+          this.$.search.graphs = this.ctx.graphs;
+        }
+        this.$.context.project = this.ctx.project;
+        this.$.context.runtime = this.ctx.runtime;
+        this.$.project.component = this.ctx.component;
+        this.$.project.project = this.ctx.project;
+        this.$.componenteditor.component = this.ctx.component;
+        this.$.componenteditor.project = this.ctx.project;
+        this.$.search.component = this.ctx.component;
+        this.$.search.project = this.ctx.project;
+        this.$.runtime.runtimes = this.ctx.compatibleRuntimes;
+        this.$.runtime.runtime = this.ctx.runtime;
+      },
+      user: function (user) {
+        this.$.main.githubToken = user['github-token'];
+        this.$.main.gridToken = user['grid-token'];
+        this.$.main.user = user['grid-user'];
+        if (user['grid-avatar']) {
+          this.$.main.avatar = user['grid-avatar'];
+        }
+        this.$.main.plan = user['flowhub-plan'];
+        this.$.project.gridToken = user['grid-token'];
+      },
+      showError: function (context) {
+        if (context.error && context.error.message) {
+          this.$.alert.message = context.error.message;
+          this.$.alert.isError = true;
+          this.$.alert.offerHTTPS = false;
+          this.$.alert.classList.add('show');
+        }
+      },
+      showProgress: function (context) {
+        if (context.state || context.offerHTTPS) {
+          this.$.alert.message = context.state || "";
+          this.$.alert.isError = false;
+          this.$.alert.offerHTTPS = context.offerHTTPS || false;
+          this.dontAutoHideAlert = context.dontAutoHideAlert || false;
+          this.$.alert.classList.add('show');
+        }
+      },
+      triggerTests: function () {
+        this.fire('runtime:runTests', this.ctx.project || this.$.project.project);
+      },
+      hideAlert: function () {
+        this.$.alert.classList.remove('show');
+      },
+      hideAlertSoon: function () {
+        if (this.dontAutoHideAlert) { return; }
+        window.setTimeout(function(){
+          this.hideAlert();
+        }.bind(this), 1300);
+      }
+    });
+  </script>
+</polymer-element>

@@ -1,0 +1,665 @@
+<link rel="import" href="number-scrubber.html">
+
+<polymer-element name="noflo-node-inspector" attributes="node component graph errorLog" class="the-card-content">
+  <template>
+    <style>
+      .ports {
+        margin-bottom: 8px;
+      }
+      ul.ports li {
+        display: block;
+        position: relative;
+        clear: left;
+      }
+      ul.ports li label span {
+        float: left;
+        clear: left;
+        font-size: 12px;
+        padding-top: 0;
+        width: 87px;
+        line-height: 36px;
+        overflow: hidden;
+      }
+
+      ul.ports li p {
+        margin: 0px;
+        padding: 0px;
+        font-size: 10px;
+        margin-left: 87px;
+        margin-bottom: 3px;
+        line-height: 13px;
+        max-height: 26px;
+        overflow: hidden;
+        color: hsl(189, 50%, 80%);
+      }
+
+      /* Hide spinners */
+      input[type=number]::-webkit-inner-spin-button, 
+      input[type=number]::-webkit-outer-spin-button {
+        -webkit-appearance: none; 
+        margin: 0; 
+      }
+      input[type=number] {
+        -moz-appearance:textfield;
+      }
+
+      ul.ports li button {
+        padding: 8px;
+        height: 19px;
+        width: 19px;
+      }
+      ul.ports li label button {
+        background-color: hsl(184, 50%, 11%);
+        color: hsl(184, 40%, 89%);
+        display: block;
+        padding: 8px;
+        height: 36px;
+        width: 36px;
+      }
+      ul.ports li label button:active {
+        color: white;
+      }
+      ul.ports li label i {
+        margin:0;
+      }
+      ul.ports li span.route {
+        /* TODO: route colors */
+        background-color: white;
+        float: none;
+        display: inline-block;
+        width: 125px;
+        height: 1px;
+        padding: 0;
+      }
+      ul.ports .remove-value {
+        background-color: transparent !important;
+        opacity: .3;
+        border: none !important;
+        position: absolute;
+        top: 0px;
+        right: 0px;
+        line-height: 36px;
+        height: 36px;
+        width: 36px;
+        text-align: center;
+        padding: 0px;
+        font-size: 12px;
+      }
+      ul.ports li span.route0  { background-color: hsl(  0,100%,100%); }
+      ul.ports li span.route1  { background-color: hsl(  0, 98%, 46%); }
+      ul.ports li span.route2  { background-color: hsl( 35, 98%, 46%); }
+      ul.ports li span.route3  { background-color: hsl( 60, 98%, 46%); }
+      ul.ports li span.route4  { background-color: hsl(135, 98%, 46%); }
+      ul.ports li span.route5  { background-color: hsl(160, 98%, 46%); }
+      ul.ports li span.route6  { background-color: hsl(185, 98%, 46%); }
+      ul.ports li span.route7  { background-color: hsl(210, 98%, 46%); }
+      ul.ports li span.route8  { background-color: hsl(285, 98%, 46%); }
+      ul.ports li span.route9  { background-color: hsl(310, 98%, 46%); }
+      ul.ports li span.route10 { background-color: hsl(335, 98%, 46%); }
+      
+      
+      ul.ports li input {
+        -webkit-box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        box-sizing: border-box;
+        width: 178px;
+        height: 36px;
+        border: none;
+        font-family: "SourceCodePro",Helvetica,Arial,sans-serif;
+        font-size: 10px;
+        padding: 9px 26px 9px 36px;
+        margin: 0px;
+      }
+      ul.ports li input[type="checkbox"] {
+        height: 18px;
+        margin-top: 9px;
+        margin-left: 36px;
+        width: 18px;
+      }
+      ul.ports li input[type="checkbox"]:before {
+        display: block;
+        content: '';
+        width: 177px;
+        height: 36px;
+        margin-top: -9px;
+        margin-left: -36px;
+        background-color: hsla( 0, 0%, 20%, .2);
+        color: hsl( 0, 0%, 75%);
+        border-left: 1px solid hsla( 0, 0%, 75%, 0.1);
+      }
+
+      ul.ports li select {
+        height: 18px;
+        margin-top: 9px;
+        margin-left: 36px;
+        max-width: 110px;
+      }
+
+      ul.ports li  input, 
+      ul.ports li  button  { 
+        background-color: hsla(  0,  0%, 30%, 0.35); 
+        color:             hsl(  0,  0%, 90%);
+      }
+      
+      ul.ports li:nth-child(even) input, 
+      ul.ports li:nth-child(even) button {
+        background-color: hsla(210, 100%, 20%, .1);
+      }
+      ul.ports li:nth-child(odd) input, 
+      ul.ports li:nth-child(odd) button {
+        background-color: hsla(190, 100%, 20%, .1);
+      }
+
+      ul.ports li.route0  input, 
+      ul.ports li.route0  button  { 
+        background-color: hsla(  0,  0%, 30%, 0.35); 
+      }
+      ul.ports li.route1  input, 
+      ul.ports li.route1  button  { 
+        background-color: hsla(  0, 98%, 20%, 0.35); 
+      }
+      ul.ports li.route2  input, 
+      ul.ports li.route2  button  { 
+        background-color: hsla( 35, 98%, 20%, 0.35); 
+      }
+      ul.ports li.route3  input, 
+      ul.ports li.route3  button  { 
+        background-color: hsla( 60, 98%, 20%, 0.35); 
+      }
+      ul.ports li.route4  input, 
+      ul.ports li.route4  button  { 
+        background-color: hsla(135, 98%, 20%, 0.35); 
+      }
+      ul.ports li.route5  input, 
+      ul.ports li.route5  button  { 
+        background-color: hsla(160, 98%, 20%, 0.35); 
+      }
+      ul.ports li.route6  input, 
+      ul.ports li.route6  button  { 
+        background-color: hsla(185, 98%, 20%, 0.35); 
+      }
+      ul.ports li.route7  input, 
+      ul.ports li.route7  button  { 
+        background-color: hsla(210, 98%, 20%, 0.35); 
+      }
+      ul.ports li.route8  input, 
+      ul.ports li.route8  button  { 
+        background-color: hsla(285, 98%, 20%, 0.35); 
+      }
+      ul.ports li.route9  input, 
+      ul.ports li.route9  button  { 
+        background-color: hsla(310, 98%, 20%, 0.35); 
+      }
+      ul.ports li.route10 input, 
+      ul.ports li.route10 button  { 
+        background-color: hsla(335, 98%, 20%, 0.35); 
+      }
+
+
+      ul.ports li.error input {
+        background-color: rgb(121, 18, 18);
+        border: 1px solid red;
+      }
+      
+      
+      ul.ports li         label > span { color: hsl(  0,  0%, 75%);}  
+      ul.ports li.route0  label > span { color: hsl(  0,  0%,100%);}  
+      ul.ports li.route1  label > span { color: hsl(  0, 98%, 46%);}
+      ul.ports li.route2  label > span { color: hsl( 35, 98%, 46%);}
+      ul.ports li.route3  label > span { color: hsl( 60, 98%, 46%);}
+      ul.ports li.route4  label > span { color: hsl(135, 98%, 46%);}
+      ul.ports li.route5  label > span { color: hsl(160, 98%, 46%);}
+      ul.ports li.route6  label > span { color: hsl(185, 98%, 46%);}
+      ul.ports li.route7  label > span { color: hsl(210, 98%, 46%);}
+      ul.ports li.route8  label > span { color: hsl(285, 98%, 46%);}
+      ul.ports li.route9  label > span { color: hsl(310, 98%, 46%);}
+      ul.ports li.route10 label > span { color: hsl(335, 98%, 46%);}
+      
+      
+
+      ul.ports  li        input, 
+      ul.ports  li        button {
+        border-left: 1px solid hsla(  0,  0%, 75%, 0.5); 
+      }
+      ul.ports  li.route0 input, 
+      ul.ports  li.route0 button {
+        border-left: 1px solid hsla(  0,  0%,100%, 0.5); 
+      }
+      ul.ports  li.route1 input, 
+      ul.ports  li.route1 button {
+        border-left: 1px solid hsla(  0, 98%, 46%, 0.5);
+      }
+      ul.ports  li.route2 input, 
+      ul.ports  li.route2 button {
+        border-left: 1px solid hsla( 35, 98%, 46%, 0.5);
+      }
+      ul.ports  li.route3 input, 
+      ul.ports  li.route3 button {
+        border-left: 1px solid hsla( 60, 98%, 46%, 0.5);
+      }
+      ul.ports  li.route4 input, 
+      ul.ports  li.route4 button {
+        border-left: 1px solid hsla(135, 98%, 46%, 0.5);
+      }
+      ul.ports  li.route5 input, 
+      ul.ports  li.route5 button {
+        border-left: 1px solid hsla(160, 98%, 46%, 0.5);
+      }
+      ul.ports  li.route6 input, 
+      ul.ports  li.route6 button {
+        border-left: 1px solid hsla(185, 98%, 46%, 0.5);
+      }
+      ul.ports  li.route7 input, 
+      ul.ports  li.route7 button {
+        border-left: 1px solid hsla(210, 98%, 46%, 0.5);
+      }
+      ul.ports  li.route8 input, 
+      ul.ports  li.route8 button {
+        border-left: 1px solid hsla(285, 98%, 46%, 0.5);
+      }
+      ul.ports  li.route9 input, 
+      ul.ports  li.route9 button {
+        border-left: 1px solid hsla(310, 98%, 46%, 0.5);
+      }
+      ul.ports li.route10 input, 
+      ul.ports li.route10 button {
+        border-left: 1px solid hsla(335, 98%, 46%, 0.5);
+      }
+      
+      number-scrubber,
+      ul.ports li label span:before {
+        display: inline;
+        line-height: 36px;
+        font-size: 10px;
+        float: right;
+        position: absolute;
+        left: 86px;
+        text-transform: uppercase;
+        opacity: 0.5;
+        width: 36px;
+        text-align: center;      
+      }
+
+      number-scrubber {
+        z-index: 5;
+        height: 36px;
+      }
+      
+      ul.ports li.port-type-color label span:before,
+      ul.ports li.port-type-int label span:before,
+      ul.ports li.port-type-number label span:before {
+        content: '#';
+      }
+      ul.ports li.port-type-array label span:before {
+        content: '[]';
+      }
+      ul.ports li.port-type-object label span:before {
+        content: '{}';
+      }
+      ul.ports li.port-type-string label span:before {
+        content: '"';
+      }
+      ul.ports li.port-type-all label span:before {
+        content: '*';
+      }
+
+      ul#errorEvents {
+        max-height: 140px;
+        overflow-x: hidden;
+        overflow-y: auto;
+        clear: left;
+      }
+      ul#errorEvents li {
+        font-size: 10px;
+        line-height: 14px;
+        margin-bottom: 0px;
+        color: hsl(185,100%,75%);
+        max-height: 56px;
+        overflow: hidden;
+        margin-bottom: 2px;
+        padding-bottom: 2px;
+        border-bottom: 1px solid hsla(190, 30%, 2%, 0.4);
+      }
+      button#clear {
+        color: rgb(179, 222, 230);
+        right: 0px;
+        line-height: 36px;
+        background-color: hsla(0, 0%, 0%, 0.7);
+      }
+
+    </style>
+    <header>
+      <h1 on-keydown="{{ checkUpdateLabel }}" on-blur="{{ updateLabel }}" contenteditable>{{ label }}</h1>
+      <template if="{{ node.label != node.component }}">
+        <h2>{{ node.component }}</h2>
+      </template>
+    </header>
+    <ul class="ports">
+      <template repeat="{{ port in inports }}">
+        <li class="route route{{ port.route }} {{ port.class }} port-type-{{ port.type }}">
+          <label><span title="{{ port.name }}">{{ port.label }}</span>
+
+            <template if="{{ port.type == 'bang' }}">
+              <button name="{{ port.name }}" on-click="{{ sendBang }}"><i class="fa fa-bolt"></i></button>
+            </template>
+            <template if="{{ port.type == 'boolean' }}">
+              <input type="checkbox" name="{{ port.name }}" checked="{{ port.value }}" data-type="{{ port.type }}" on-change="{{ updateValue }}">
+            </template>
+            <template if="{{ port.values }}">
+              <select name="{{ port.name }}" data-type="{{ port.type }}" on-change="{{ updateValue }}" value="{{ port.value }}">
+                <option></option>
+                <template repeat="{{ value in port.values }}">
+                  <option value="[[value]]" selected?="{{ port.value == value }}" >[[value]]</option>
+                </template>
+              </select>
+            </template>
+            <template if="{{ port.type == 'int' && !port.values }}">
+              <number-scrubber name="{{ port.name }}" value="{{port.value}}" step="1" data-type="int" on-scrubstart="{{ scrubStart }}" on-scrub="{{updateValue}}" on-scrubend="{{ scrubEnd }}">#</number-scrubber>
+              <input type="text" data-type="int" name="{{ port.name }}" value="{{ port.value }}" on-change="{{ updateValue }}" on-keydown="{{ checkEnter }}" />
+            </template>
+            <template if="{{ port.type == 'number' && !port.values }}">
+              <number-scrubber name="{{ port.name }}" value="{{ port.value }}" step="0.01" data-type="number" on-scrubstart="{{ scrubStart }}" on-scrub="{{updateValue}}" on-scrubend="{{ scrubEnd }}">#</number-scrubber>
+              <input type="text" data-type="number" name="{{ port.name }}" value="{{ port.value }}" on-change="{{ updateValue }}" on-keydown="{{ checkEnter }}" />
+            </template>
+            <template if="{{ port.type != 'bang' && port.type != 'boolean' && port.type != 'int' && port.type != 'number' && port.type != 'uri' && !port.values }}">
+              <input type="{{ port.inputType }}" name="{{ port.name }}" value="{{ port.value }}" autocapitalize="off" autocorrect="off" data-type="{{ port.type }}" on-keydown="{{ checkEnter }}" on-change="{{ updateValue }}" />
+            </template>
+            <template if="{{ port.type == 'uri' }}">
+              <input type="text" name="{{ port.name }}" data-type="string" on-change="{{ updateValue }}"></input>
+              <input type="file" name="{{ port.name }}" data-type="{{ port.type }}" on-change="{{ updateValue }}"></input>
+            </template>
+            <template if="{{ port.type != 'bang' && port.value != undefined }}">
+              <button class="remove-value" data-port="{{ port.name }}" on-click="{{ removeValue }}"><i class="fa fa-ban"></i></button>
+            </template>
+
+          </label>
+          <template if="{{ port.description }}">
+          <p>{{ port.description }}</p>
+          </template>
+        </li>
+      </template>
+      <li>
+        <button id="clear" on-click="{{ clearErrors }}" title="Clear Error Log"><i class="fa fa-ban"></i></button>
+      </li>
+      <ul id="errorEvents">
+      </ul>
+    </ul>
+  </template>
+  <script>
+    Polymer('noflo-node-inspector', {
+      errorLog: null,
+      lastErrorLog: 0,
+      showErrorLogs: 20,
+      label: '',
+      node: null,
+      component: null,
+      graph: null,
+      inports: [],
+      nodeChanged: function() {
+        this.updatePorts();
+        this.label = this.node.metadata.label;
+      },
+      checkUpdateLabel: function (event, detail, sender) {
+        if (event.keyCode===13) { // Enter
+          event.preventDefault();
+          this.updateLabel(event, detail, sender);
+        }
+      },
+      updateLabel: function (event, detail, sender) {
+        // Check if we need to make change
+        var label = sender.textContent;
+        if (label === this.node.metadata.label) {
+          return;
+        }
+        // Change label
+        this.graph.startTransaction('rename');
+        this.graph.setNodeMetadata(this.node.id, {
+          label: label
+        });
+        // Change id
+        var id = label;
+        if (id !== this.node.id) {
+          // Ensure unique
+          while (this.graph.getNode(id)) {
+            var num = 60466176; // 36^5
+            num = Math.floor(Math.random() * num);
+            id = label + '_' + num.toString(36);
+          }
+          this.graph.renameNode(this.node.id, id);
+        }
+        this.graph.endTransaction('rename');
+      },
+      getPortValue: function (port) {
+        var value;
+        this.graph.initializers.forEach(function (iip) {
+          if (iip.to.node == this.node.id && iip.to.port === port) {
+            value = iip.from.data;
+          }
+        }.bind(this));
+        return value;
+      },
+      getPortConnection: function (port) {
+        var connected = false;
+        var route = "X";
+        Object.keys(this.graph.inports).forEach(function (name) {
+          var inport = this.graph.inports[name];
+          if (inport.process == this.node.id && inport.port == port) {
+            connected = true;
+            route = 2;
+          }
+        }.bind(this));
+        this.graph.edges.forEach(function (edge) {
+          if (edge.to.node == this.node.id && edge.to.port == port) {
+            connected = true;
+            route = edge.metadata.route || 0;
+          }
+        }.bind(this));
+        return {
+          connected: connected,
+          route: route
+        };
+      },
+      portToInput: function (port) {
+        var value = this.getPortValue(port.name);
+        var connection = this.getPortConnection(port.name);
+        var portDef = {
+          name: port.name,
+          label: port.name.replace(/(.*)\/(.*)(_.*)\.(.*)/, '$2.$4'),
+          class: '',
+          type: port.type,
+          description: port.description,
+          inputType: port.type,
+          value: value,
+          values: port.values,
+          route: connection.route
+        };
+        switch (port.type) {
+          case 'object':
+          case 'array':
+            portDef.value = JSON.stringify(value);
+            portDef.inputType = 'text';
+            break;
+          case 'int':
+            portDef.inputType = 'number';
+            break;
+          case 'all':
+            portDef.inputType = 'text';
+            break;
+        }
+        return portDef;
+      },
+      inputToPort: function (input) {
+        var dataType = input.getAttribute('data-type');
+        switch (dataType) {
+          case 'object':
+          case 'array':
+            try {
+              return JSON.parse(input.value);
+            } catch (e) {
+              return input.value;
+            }
+            break;
+          case 'boolean':
+            return input.checked;
+          case 'number':
+            return parseFloat(input.value);
+          case 'int':
+            return parseInt(input.value, 10);
+          case 'date':
+            return new Date(input.value);
+          case 'uri':
+            return function(callback) {
+                var reader = new FileReader();
+                reader.onload = function() {
+                    return callback(reader.result);
+                };
+                reader.readAsDataURL(input.files[0]);
+            };
+          default:
+            return input.value;
+        }
+      },
+      updatePorts: function () {
+        this.inports = [];
+        this.component.inports.forEach(function (port) {
+          var portDef = this.portToInput(port);
+          this.inports.push(portDef);
+        }.bind(this));
+      },
+      checkEnter: function (event, detail, sender) {
+        if (event.keyCode===13) {
+          event.preventDefault();
+          this.updateValue(event, detail, sender);
+        }
+      },
+      updateValue: function (event, detail, sender) {
+        event.preventDefault();
+
+        var value = this.inputToPort(sender);
+        var name = sender.getAttribute('name');
+        var port;
+        this.inports.forEach(function (p) {
+          if (p.name === name) {
+            port = p;
+          }
+        });
+
+        if (port.type!=='string' && (sender.value==="")) {
+          // Empty string should remove number, object, array IIPs
+          this.removeValue(event, detail, sender);
+          return;
+        }
+
+        var validatePortValue = function(type, value) {
+          switch (type) {
+            case 'number':
+            case 'int':
+              return (value!=="" && !isNaN(value));
+            case 'object':
+              return value instanceof Object;
+            case 'array':
+              return value instanceof Array;
+            case 'date':
+              return value instanceof Date;
+          }
+          return true;
+        };
+
+        var setPortValue = function(value) {
+          if (!this.scrubbing) {
+            this.graph.startTransaction('iipchange');
+          }
+          this.graph.removeInitial(this.node.id, name);
+          this.graph.addInitial(value, this.node.id, name);
+          if (!this.scrubbing) {
+            this.graph.endTransaction('iipchange');
+          }
+        }.bind(this);
+
+        if (validatePortValue(port.type, value)) {
+          if (typeof value === 'function') {
+            // async callback
+            value(setPortValue);
+          } else {
+            setPortValue(value);
+          }
+          sender.parentNode.parentNode.classList.remove('error');
+        } else {
+          sender.parentNode.parentNode.classList.add('error');
+        }
+      },
+      scrubbing: false,
+      scrubStart: function (event, detail, sender) {
+        if (sender.value===null) {
+          sender.value = 0;
+        }
+        // This need to work with the journal
+        // this.scrubbing = true;
+        // this.graph.startTransaction('iipscrub');
+      },
+      scrubEnd: function () {
+        // this.graph.endTransaction('iipscrub');
+        // this.scrubbing = false;
+      },
+      removeValue: function (event, detail, sender) {
+        event.preventDefault();
+        var name = sender.getAttribute('data-port');
+        if (!name) {
+          name = sender.getAttribute('name');
+        }
+        this.graph.removeInitial(this.node.id, name);
+        this.inports.forEach(function (port) {
+          if (port.name === name) {
+            port.value = null;
+          }
+        });
+        sender.parentNode.parentNode.classList.remove('error');
+      },
+      sendBang: function (event, detail, sender) {
+        event.preventDefault();
+        var name = sender.getAttribute('name');
+        this.graph.startTransaction('bang');
+        this.graph.removeInitial(this.node.id, name);
+        this.graph.addInitial(true, this.node.id, name);
+        this.graph.removeInitial(this.node.id, name);
+        this.graph.endTransaction('bang');
+      },
+      error: function () {
+        this.renderLogs();
+      },
+      errorLogChanged: function () {
+        this.renderLogs();
+      },
+      clearErrors: function () {
+        this.errorLog.clear();
+        this.lastErrorLog = 0;
+        this.$.errorEvents.innerHTML = '';
+      },
+      renderLogs: function () {
+        var first = this.lastErrorLog;
+        var i, item, li, content;
+        if (this.errorLog.length - this.lastErrorLog > this.showErrorLogs) {
+          first = this.errorLog.length - this.showErrorLogs;
+        }
+        var fragment = document.createDocumentFragment();
+        for (i = first; i < this.errorLog.length; i++) {
+          item = this.errorLog.get(i);
+          if (!item) {
+            continue;
+          }
+          li = document.createElement('li');
+          content = document.createTextNode(item);
+          li.appendChild(content);
+          fragment.appendChild(li);
+        }
+        this.$.errorEvents.appendChild(fragment);
+        // Scroll to bottom
+        while (this.$.errorEvents.childElementCount > this.showErrorLogs) {
+          this.$.errorEvents.removeChild(this.$.errorEvents.firstChild);
+        }
+        this.$.errorEvents.scrollTop = this.$.errorEvents.scrollHeight;
+        this.lastErrorLog = this.errorLog.length;
+      }
+    });
+  </script>
+</polymer-element>

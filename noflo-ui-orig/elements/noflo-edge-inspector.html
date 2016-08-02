@@ -1,0 +1,190 @@
+<polymer-element name="noflo-edge-inspector" attributes="edge graph showlogs" class="the-card-content">
+  <template>
+    <style>
+      h1 {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 10px;
+        width: 100%;
+      }
+      h1 .connection {
+        text-transform: uppercase;
+        font-size: 9px;
+      }
+      h1 .connection.route0 { color: #fff; }
+      h1 .connection.route1 { color: hsl(  0,  98%, 46%); }
+      h1 .connection.route2 { color: hsl( 35,  98%, 46%); }
+      h1 .connection.route3 { color: hsl( 60,  98%, 46%); }
+      h1 .connection.route4 { color: hsl(135,  98%, 46%); }
+      h1 .connection.route5 { color: hsl(160,  98%, 46%); }
+      h1 .connection.route6 { color: hsl(185,  98%, 46%); }
+      h1 .connection.route7 { color: hsl(210,  98%, 46%); }
+      h1 .connection.route8 { color: hsl(285,  98%, 46%); }
+      h1 .connection.route9 { color: hsl(310,  98%, 46%); }
+      h1 .connection.route10 {color: hsl(335,  98%, 46%); }
+
+      ul#events {
+        max-height: 140px;
+        overflow-x: hidden;
+        overflow-y: auto;
+        clear: left;
+      }
+      ul#events li {
+        font-size: 10px;
+        line-height: 14px;
+        margin-bottom: 0px;
+        color: hsl(185,100%,75%);
+        max-height: 56px;
+        overflow: hidden;
+        margin-bottom: 2px;
+        padding-bottom: 2px;
+        border-bottom: 1px solid hsla(190, 30%, 2%, 0.4);
+      }
+      ul#events li.connect {
+        border-top: 1px solid #80ff80;
+        height: 3px;
+        margin-bottom: 3px;
+      }
+      ul#events li.begingroup {
+        color: hsl(189, 50%, 80%);
+      }
+      ul#events li.begingroup:before {
+        display: inline;
+        content: '<';
+      }
+      ul#events li.begingroup:after {
+        display: inline;
+        content: '>';
+      }
+      ul#events li.endgroup {
+        color: hsl(189, 50%, 80%);
+      }
+      ul#events li.endgroup:before {
+        display: inline;
+        content: '</';
+      }
+      ul#events li.endgroup:after {
+        display: inline;
+        content: '>';
+      }
+      ul#events li.disconnect {
+        border-bottom: 1px solid #ff8080;
+        height: 3px;
+        margin-bottom: 3px;
+      }
+      ul#events img {
+        margin: 5px;
+        max-width: 100px;
+      }
+      button#clear {
+        color: rgb(179, 222, 230);
+        position: absolute;
+        right: 0px;
+        top: 9px;
+        line-height: 36px;
+        background-color: hsla(0, 0%, 0%, 0.7);
+      }
+    </style>
+    <h1>{{ sourceNode }} <span class="connection route{{ route }}">{{ sourcePort }} &#10142; {{ targetPort }}</span> {{ targetNode }}</h1>
+    <button id="clear" on-click="{{ clear }}" title="Clear log"><i class="fa fa-ban"></i></button>
+    <ul id="events">
+    </ul>
+  </template>
+  <script>
+    Polymer('noflo-edge-inspector', {
+      lastlog: 0,
+      showlogs: 20,
+      edge: null,
+      log: null,
+      graph: null,
+      sourceNode: '',
+      sourcePort: '',
+      targetNode: '',
+      targetPort: '',
+      route: 0,
+      frameReq: null,
+      detached: function () {
+        if (this.frameReq) {
+          window.cancelAnimationFrame(this.frameReq);
+        }
+      },
+      edgeChanged: function () {
+        var src = this.edge.from;
+        var tgt = this.edge.to;
+        this.sourceNode = this.nodeLabel(src.node);
+        this.sourcePort = src.port;
+        this.targetNode = this.nodeLabel(tgt.node);
+        this.targetPort = tgt.port;
+        this.route = this.edge.metadata.route;
+        this.animate();
+      },
+      nodeLabel: function (node) {
+        var extractLibrary = node.split('/');
+        if (extractLibrary.length > 1) {
+          node = extractLibrary[1];
+        }
+        return node.split('_')[0];
+      },
+      clear: function () {
+        this.log.clear();
+        this.lastlog = 0;
+        this.$.events.innerHTML = '';
+      },
+      animate: function () {
+        if (!this.log) {
+          return;
+        }
+        // TODO top-level animation loop
+        this.frameReq = window.requestAnimationFrame(this.animate.bind(this));
+        if (this.log.length <= this.lastlog) {
+          return;
+        }
+        this.renderLogs();
+        this.lastlog = this.log.length;
+      },
+      renderLogs: function () {
+        var first = this.lastlog;
+        var i, item, li, content;
+        if (this.log.length - this.lastlog > this.showlogs) {
+          first = this.log.length - this.showlogs;
+        }
+        var fragment = document.createDocumentFragment();
+        for (i = first; i < this.log.length; i++) {
+          item = this.log.get(i);
+          if (!item) {
+            continue;
+          }
+          li = document.createElement('li');
+          li.classList.add(item.type);
+          if (item.group) {
+            content = document.createTextNode(item.group);
+          } else {
+            var cleaned = item.data;
+            if (typeof item.data === 'object') {
+              cleaned = JSON.stringify(item.data, null, 2);
+              if (typeof item.data.type !== 'undefined' && item.data.type === 'previewurl') {
+                var separator = (item.data.url.indexOf('?') !== -1) ? '&' : '?';
+                content = document.createElement('img');
+                content.src = item.data.url + separator + 'timestamp=' + new Date().getTime();
+                content.classList.add('previewimg');
+              } else {
+                content = document.createTextNode(cleaned);
+              }
+            } else {
+              content = document.createTextNode(cleaned);
+            }
+          }
+          li.appendChild(content);
+          fragment.appendChild(li);
+        }
+        this.$.events.appendChild(fragment);
+        // Scroll to bottom
+        while (this.$.events.childElementCount > this.showlogs) {
+          this.$.events.removeChild(this.$.events.firstChild);
+        }
+        this.$.events.scrollTop = this.$.events.scrollHeight;
+      }
+    });
+  </script>
+</polymer-element>

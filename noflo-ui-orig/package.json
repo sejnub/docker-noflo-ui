@@ -1,0 +1,74 @@
+{
+  "name": "noflo-ui",
+  "description": "NoFlo Development Environment",
+  "version": "0.12.2",
+  "author": {
+    "name": "Henri Bergius",
+    "email": "henri.bergius@iki.fi"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/noflo/noflo-ui.git"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "codemirror": "^4.11.0",
+    "coffeelint": "^1.15.7",
+    "fbp": "1.5.0",
+    "fbp-spec": "~0.1.15",
+    "flowhub-registry": "0.0.4",
+    "font-awesome": "^4.6.3",
+    "indexeddbshim": "^2.2.1",
+    "jshint": "^2.9.2",
+    "microflo": "0.3.38",
+    "noflo": "~0.7.9",
+    "noflo-ajax": "~0.1.5",
+    "noflo-core": "~0.2.3",
+    "noflo-dom": "~0.1.0",
+    "noflo-github": "~0.0.15",
+    "noflo-graph": "~0.1.0",
+    "noflo-groups": "~0.1.8",
+    "noflo-indexeddb": "~0.1.0",
+    "noflo-interaction": "~0.1.0",
+    "noflo-localstorage": "~0.1.0",
+    "noflo-objects": "~0.1.13",
+    "noflo-polymer": "~0.1.1",
+    "noflo-routers": "~0.2.1",
+    "noflo-runtime": "~0.3.3",
+    "noflo-runtime-base": "^0.7.3",
+    "noflo-runtime-webrtc": "~0.7.1",
+    "noflo-strings": "~0.1.12",
+    "rtc": "^3.4.0",
+    "webcomponents.js": "0.6.0"
+  },
+  "devDependencies": {
+    "chai": "1.10.0",
+    "grunt": "0.4.5",
+    "grunt-bower-install-simple": "1.2.3",
+    "grunt-coffeelint": "^0.0.15",
+    "grunt-contrib-clean": "0.7.0",
+    "grunt-contrib-coffee": "0.13.0",
+    "grunt-contrib-compress": "1.2.0",
+    "grunt-contrib-connect": "1.0.2",
+    "grunt-contrib-copy": "1.0.0",
+    "grunt-contrib-uglify": "1.0.1",
+    "grunt-contrib-watch": "1.0.0",
+    "grunt-gh-pages": "0.9.1",
+    "grunt-lint-inline": "0.4.4",
+    "grunt-noflo-browser": "1.0.0-alpha4",
+    "grunt-phonegap-build": "0.0.8",
+    "grunt-saucelabs": "^9.0.0",
+    "grunt-string-replace": "1.2.1",
+    "grunt-vulcanize": "0.4.2",
+    "grunt-zip": "0.17.0",
+    "mocha": "^2.4.5",
+    "syn": "0.1.5"
+  },
+  "scripts": {
+    "test": "grunt test"
+  },
+  "keywords": [
+    "noflo",
+    "fbp"
+  ]
+}
