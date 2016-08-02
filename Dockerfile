@@ -30,7 +30,7 @@ RUN curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-
 RUN mkdir noflo-ui
 RUN cd noflo-ui
 
-copy noflo-ui-orig .
+COPY noflo-ui-orig .
 
 # RUN git config --global http.proxy $http_proxy
 # RUN sudo git clone https://github.com/sejnub/docker-noflo-ui.git
