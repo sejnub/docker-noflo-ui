@@ -27,10 +27,10 @@ RUN curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-
 
 ######## The preceeding is from node:latest but truncated because I didn't want to start node
 
-RUN mkdir noflo-ui
-RUN cd noflo-ui
+RUN mkdir ~/noflo-ui
+RUN cd ~/noflo-ui
 
-COPY noflo-ui-orig .
+COPY noflo-ui-orig ~/noflo-ui
 
 # RUN git config --global http.proxy $http_proxy
 # RUN sudo git clone https://github.com/sejnub/docker-noflo-ui.git
