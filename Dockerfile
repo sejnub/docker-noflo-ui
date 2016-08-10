@@ -27,7 +27,4 @@ RUN curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-
 
 ######## The preceeding is from node:latest but truncated because I didn't want to start node
 
-RUN mkdir /root/noflo-ui
-RUN cd /root/noflo-ui
-RUN git clone git@github.com:noflo/noflo-ui.git
-
+RUN git clone https://github.com/noflo/noflo-ui.git
