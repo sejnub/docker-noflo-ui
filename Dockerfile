@@ -41,4 +41,6 @@ RUN cd /noflo-ui && npm install simple-server
 
 RUN cd /noflo-ui && ./node_modules/.bin/simple-server . 80
 
+RUN echo "cd /noflo-ui && ./node_modules/.bin/simple-server . 80" > /noflo-ui/start.sh && chmod +x /noflo-ui/start.sh
+
 EXPOSE 80
