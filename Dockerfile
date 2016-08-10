@@ -1,5 +1,7 @@
 FROM buildpack-deps:jessie
 
+# TODO checkout the noflo-ui to another folder 
+
 # gpg keys listed at https://github.com/nodejs/node
 RUN set -ex \
   && for key in \
@@ -27,4 +29,7 @@ RUN curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-
 
 ######## The preceeding is from node:latest but truncated because I didn't want to start node
 
-RUN git clone https://github.com/noflo/noflo-ui.git
+RUN git clone https://github.com/noflo/noflo-ui.git 
+
+RUN cd /noflo-ui && npm install
+
