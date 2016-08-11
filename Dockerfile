@@ -27,7 +27,7 @@ RUN curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-
   && tar -xJf "node-v$NODE_VERSION-linux-x64.tar.xz" -C /usr/local --strip-components=1 \
   && rm "node-v$NODE_VERSION-linux-x64.tar.xz" SHASUMS256.txt.asc SHASUMS256.txt
 
-######## The preceeding is from node:latest but truncated because I didn't want to start node
+######## The preceeding is copied from node:latest but truncated because I didn't want to start node
 
 RUN git clone https://github.com/noflo/noflo-ui.git 
 
@@ -40,5 +40,7 @@ RUN cd /noflo-ui && grunt build
 RUN cd /noflo-ui && npm install simple-server
 
 RUN echo "cd /noflo-ui && ./node_modules/.bin/simple-server . 80" > /noflo-ui/start.sh && chmod +x /noflo-ui/start.sh
+
+CMD /noflo-ui/start.sh
 
 EXPOSE 80
