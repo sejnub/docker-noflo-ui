@@ -10,3 +10,6 @@ Source and documentation for noflo-ui: https://github.com/noflo/noflo-ui
 
 ## Run the webserver with no persistence
 `docker run -d -p 80:80 sejnub/noflo-ui`
+
+## Access the server 
+In your browser open http://<ip-of-the-docker-host>/index.html
