@@ -1,4 +1,4 @@
-# Supported tags and respective Dockerfile links
+# Supported tags and respective `Dockerfile links`
 
 # What is docker-noflo-ui
 Documentation for noflo-ui: https://github.com/noflo/noflo-ui
