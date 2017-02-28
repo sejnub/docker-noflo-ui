@@ -6,12 +6,12 @@ AFAIK stable.
 Totally free to use by everyone.
 
 ## Tags
-  * **``rpi-latest``**  noflo-ui for Raspberry Pi
+  * **``latest``**  noflo-ui for the X86 platform
 
 ## Build
 
     cd ~; rm -rf docker-noflo-ui; git clone https://github.com/sejnub/docker-noflo-ui.git
-    cd ~/docker-noflo-ui; docker build -t sejnub/noflo-ui:rpi-latest .
+    cd ~/docker-noflo-ui; docker build -t sejnub/noflo-ui:latest .
     
     eof
 
@@ -22,17 +22,17 @@ If you are not sejnub you have to retag the images to your username at dockerhub
 Log into dockerhub and push the images with
     
     docker login
-    docker push sejnub/noflo-ui:rpi-latest
+    docker push sejnub/noflo-ui:latest
 
 
 ## Run
 Run an interactive bash
 
-    docker rm -f noflo-ui; docker run -it -p 80:80 --name noflo-ui sejnub/noflo-ui:rpi-latest bash
+    docker rm -f noflo-ui; docker run -it -p 80:80 --name noflo-ui sejnub/noflo-ui:latest bash
 
 Run the latest or the updated version
 
-    docker rm -f noflo-ui; docker run -d  -p 80:80 --name noflo-ui sejnub/noflo-ui:rpi-latest
+    docker rm -f noflo-ui; docker run -d  -p 80:80 --name noflo-ui sejnub/noflo-ui:latest
 
     eof
     
