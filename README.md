@@ -2,7 +2,7 @@
 This repository contains the things needed to build docker images [for noflo-ui](https://github.com/noflo/noflo-ui). You can try a hosted version of it at [flowhub](http://flowhub.io/).
 
 ## Status and rights
-AFAIK stable. 
+Broken right now. See Issues!
 Totally free to use by everyone.
 
 ## Tags
