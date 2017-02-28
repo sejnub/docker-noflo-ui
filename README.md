@@ -1,32 +1,3 @@
-# Supported tags and respective `Dockerfile` links
-
-At the moment there are no tags.  
-
-# What is noflo-ui?
-
-Source and documentation for noflo-ui: https://github.com/noflo/noflo-ui
-
-# How to use this image
-
-## Run the webserver with no persistence
-`docker run -d -p 80:80 sejnub/noflo-ui`
-
-## Access the server 
-In your browser open http://<ip-of-the-docker-host>/index.html
-
-
-
-
-
-
-
-
-
-
-
-
-################################################################
-
 # docker-noflo-ui
 This repository contains the things needed to build docker images [for noflo-ui](https://github.com/noflo/noflo-ui). You can try a hosted version of it at [flowhub](http://flowhub.io/).
 
@@ -35,74 +6,37 @@ AFAIK stable.
 Totally free to use by everyone.
 
 ## Tags
-  * **``rpi-latest``**  FHEM 5.8 for Raspberry Pi
-  * **``rpi-updated``** FHEM 5.8 for Raspberry Pi updated to the (at build time) latest versions of all modules
-
-## Thanks
-Initial content was copied from https://github.com/Raigen/docker-fhem. Many thanks for your effort! 
-
+  * **``rpi-latest``**  noflo-ui for Raspberry Pi
 
 ## Build
 
-    cd ~; rm -rf docker-fhem; git clone https://github.com/sejnub/docker-fhem.git
-    cd ~/docker-fhem; docker build -t sejnub/fhem:rpi-latest .
+    cd ~; rm -rf docker-noflo-ui; git clone https://github.com/sejnub/docker-noflo-ui.git
+    cd ~/docker-noflo-ui; docker build -t sejnub/noflo-ui:rpi-latest .
     
     eof
 
 
-## Update FHEM
-
-Run 
-    
-    docker rm -f fhem; docker run -d -p 8083:8083 --name fhem sejnub/fhem:rpi-latest
-
-Open browser and point it to the fhem webserver on port 8083.
-
-Into the command field at the top of the fhem web page type
-    
-    update
-
-When it's finished type into the same command field
-    
-    shutdown
-
-Now commit the update to a new image
-    
-    docker commit fhem sejnub/fhem:rpi-updated
-
-Now you have an up to date image with fhem.
-
-
 ## Push images to https://hub.docker.com
-
 If you are not sejnub you have to retag the images to your username at dockerhub and use those new tags. The following commands use the authors tags.
 
 Log into dockerhub and push the images with
     
     docker login
-    docker push sejnub/fhem:rpi-latest
-    docker push sejnub/fhem:rpi-updated
+    docker push sejnub/noflo-ui:rpi-latest
 
 
 ## Run
-
-For running with CUL we need ``--privileged`` or ``--device`` <cul-device>. The following commands assume that you use a CUL in a typical setup.
-
 Run an interactive bash
 
-    docker rm -f fhem; docker run -it --device /dev/ttyACM0 -p 8083:8083 -p 7072:7072 --name fhem sejnub/fhem:rpi-latest bash
+    docker rm -f noflo-ui; docker run -it -p 80:80 --name noflo-ui sejnub/noflo-ui:rpi-latest bash
 
 Run the latest or the updated version
 
-    docker rm -f fhem; docker run -d  --device /dev/ttyACM0 -p 8083:8083 -p 7072:7072 --name fhem sejnub/fhem:rpi-latest
-
-    docker rm -f fhem; docker run -d  --device /dev/ttyACM0 -p 8083:8083 -p 7072:7072 --name fhem sejnub/fhem:rpi-updated
+    docker rm -f noflo-ui; docker run -d  -p 80:80 --name noflo-ui sejnub/noflo-ui:rpi-latest
 
     eof
     
     
-## CUL
-
-For flashing and adding CUL see 
-https://haus-automatisierung.com/hardware/fhem/2016/05/08/fhem-tutorial-reihe-part-4-cul-flashen-und-erste-geraete-anlernen.html
+## Access the server 
+In your browser open http://<ip-of-the-docker-host>/index.html
 
