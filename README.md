@@ -38,5 +38,5 @@ Run the latest or the updated version
     
     
 ## Access the server 
-In your browser open http://<ip-of-the-docker-host>/index.html
+In your browser open `http://<ip-of-the-docker-host>/index.html`
 
