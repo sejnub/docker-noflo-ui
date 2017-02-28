@@ -1,4 +1,4 @@
-FROM node
+FROM node:6.10.0
 
 RUN git clone https://github.com/noflo/noflo-ui.git 
 
